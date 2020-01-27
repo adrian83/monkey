@@ -1,114 +1,69 @@
 package parser
 
 import (
+	"fmt"
+	"strings"
 	"testing"
 
 	"github.com/adrian83/monkey/pkg/ast"
 	"github.com/adrian83/monkey/pkg/lexer"
+	"github.com/adrian83/monkey/pkg/token"
 )
 
 func TestLetStatements(t *testing.T) {
-	input := `
-let x = 5;
-let y = 10;
-let foobar = 838383;
-`
-	l := lexer.New(input)
-	p := New(l)
-
-	program := p.ParseProgram()
-	checkParserErrors(t, p)
-
-	if program == nil {
-		t.Fatalf("ParseProgram() returned nil")
-	}
-	if len(program.Statements) != 3 {
-		t.Fatalf("program.Statements does not contain 3 statements. got=%d",
-			len(program.Statements))
-	}
-
-	tests := []struct {
-		expectedIdentifier string
+	testData := map[string]struct {
+		input string
+		name  string
+		value int64
 	}{
-		{"x"},
-		{"y"},
-		{"foobar"},
+		"first":  {"let x = 5;", "x", 5},
+		"second": {"let y = 10;", "y", 10},
+		"third":  {"let foobar = 838383;", "foobar", 838383},
 	}
 
-	for i, tt := range tests {
-		stmt := program.Statements[i]
-		if !testLetStatement(t, stmt, tt.expectedIdentifier) {
-			return
-		}
-	}
-}
+	for name, tData := range testData {
+		data := tData
 
-func testLetStatement(t *testing.T, s ast.Statement, name string) bool {
-	if s.TokenLiteral() != "let" {
-		t.Errorf("s.TokenLiteral not 'let'. got=%q", s.TokenLiteral())
-		return false
-	}
+		t.Run(name, func(t *testing.T) {
+			l := lexer.New(data.input)
+			p := New(l)
 
-	letStmt, ok := s.(*ast.LetStatement)
-	if !ok {
-		t.Errorf("s not *ast.LetStatement. got=%T", s)
-		return false
-	}
+			program := p.ParseProgram()
+			assertNoParsingErrors(t, p.Errors())
+			assertNotEmptyProgram(t, program)
 
-	if letStmt.Name.Value != name {
-		t.Errorf("letStmt.Name.Value not '%s'. got=%s", name, letStmt.Name.Value)
-		return false
+			stmt := program.Statements[0]
+			letStmt := assertLetStatement(t, stmt)
+			assertIdentifierValue(t, data.name, letStmt.Name.Value)
+			assertTokenLiteral(t, strings.ToLower(token.LET), stmt.TokenLiteral())
+		})
 	}
-
-	if letStmt.Name.TokenLiteral() != name {
-		t.Errorf("letStmt.Name.TokenLiteral() not '%s'. got=%s",
-			name, letStmt.Name.TokenLiteral())
-		return false
-	}
-
-	return true
-}
-
-func checkParserErrors(t *testing.T, p *Parser) {
-	errors := p.Errors()
-	if len(errors) == 0 {
-		return
-	}
-
-	t.Errorf("parser has %d errors", len(errors))
-	for _, msg := range errors {
-		t.Errorf("parser error: %q", msg)
-	}
-	t.FailNow()
 }
 
 func TestReturnStatements(t *testing.T) {
-	input := `
-return 5;
-return 10;
-return 993322;
-`
-	l := lexer.New(input)
-	p := New(l)
-
-	program := p.ParseProgram()
-	checkParserErrors(t, p)
-
-	if len(program.Statements) != 3 {
-		t.Fatalf("program.Statements does not contain 3 statements. got=%d",
-			len(program.Statements))
+	testData := map[string]struct {
+		input string
+		value int64
+	}{
+		"return 5":      {"return 5;", 5},
+		"return 10":     {"return 10;", 10},
+		"return 993322": {"return 993322;", 993322},
 	}
 
-	for _, stmt := range program.Statements {
-		returnStmt, ok := stmt.(*ast.ReturnStatement)
-		if !ok {
-			t.Errorf("stmt not *ast.ReturnStatement. got=%T", stmt)
-			continue
-		}
-		if returnStmt.TokenLiteral() != "return" {
-			t.Errorf("returnStmt.TokenLiteral not 'return', got %q",
-				returnStmt.TokenLiteral())
-		}
+	for name, tData := range testData {
+		data := tData
+
+		t.Run(name, func(t *testing.T) {
+			l := lexer.New(data.input)
+			p := New(l)
+
+			program := p.ParseProgram()
+			assertNoParsingErrors(t, p.Errors())
+			assertNotEmptyProgram(t, program)
+
+			returnStmt := assertReturnStatement(t, program.Statements[0])
+			assertTokenLiteral(t, strings.ToLower(token.RETURN), returnStmt.TokenLiteral())
+		})
 	}
 }
 
@@ -117,30 +72,15 @@ func TestIdentifierExpression(t *testing.T) {
 
 	l := lexer.New(input)
 	p := New(l)
+
 	program := p.ParseProgram()
-	checkParserErrors(t, p)
+	assertNoParsingErrors(t, p.Errors())
+	assertNotEmptyProgram(t, program)
 
-	if len(program.Statements) != 1 {
-		t.Fatalf("program has not enough statements. got=%d",
-			len(program.Statements))
-	}
-	stmt, ok := program.Statements[0].(*ast.ExpressionStatement)
-	if !ok {
-		t.Fatalf("program.Statements[0] is not ast.ExpressionStatement. got=%T",
-			program.Statements[0])
-	}
-
-	ident, ok := stmt.Expression.(*ast.Identifier)
-	if !ok {
-		t.Fatalf("exp not *ast.Identifier. got=%T", stmt.Expression)
-	}
-	if ident.Value != "foobar" {
-		t.Errorf("ident.Value not %s. got=%s", "foobar", ident.Value)
-	}
-	if ident.TokenLiteral() != "foobar" {
-		t.Errorf("ident.TokenLiteral not %s. got=%s", "foobar",
-			ident.TokenLiteral())
-	}
+	stmt := assertExpressionStatement(t, program.Statements[0])
+	ident := assertIdentifier(t, stmt.Expression)
+	assertIdentifierValue(t, "foobar", ident.Value)
+	assertTokenLiteral(t, "foobar", ident.TokenLiteral())
 }
 
 func TestIntegerLiteralExpression(t *testing.T) {
@@ -148,28 +88,144 @@ func TestIntegerLiteralExpression(t *testing.T) {
 
 	l := lexer.New(input)
 	p := New(l)
+
 	program := p.ParseProgram()
-	checkParserErrors(t, p)
+	assertNoParsingErrors(t, p.Errors())
+	assertNotEmptyProgram(t, program)
 
-	if len(program.Statements) != 1 {
-		t.Fatalf("program has not enough statements. got=%d",
-			len(program.Statements))
-	}
-	stmt, ok := program.Statements[0].(*ast.ExpressionStatement)
-	if !ok {
-		t.Fatalf("program.Statements[0] is not ast.ExpressionStatement. got=%T",
-			program.Statements[0])
+	stmt := assertExpressionStatement(t, program.Statements[0])
+	intLit := assertIntegerLiteral(t, stmt.Expression)
+	if intLit.Value != 5 {
+		t.Errorf("literal.Value not %d. got=%d", 5, intLit.Value)
 	}
 
-	literal, ok := stmt.Expression.(*ast.IntegerLiteral)
+	assertTokenLiteral(t, "5", intLit.TokenLiteral())
+}
+
+func TestParsingPrefixExpressions(t *testing.T) {
+	testData := map[string]struct {
+		input    string
+		operator string
+		value    int64
+	}{
+		"bang":  {"!5;", "!", 5},
+		"minus": {"-15;", "-", 15},
+	}
+
+	for name, tData := range testData {
+		data := tData
+
+		t.Run(name, func(t *testing.T) {
+
+			l := lexer.New(data.input)
+			p := New(l)
+			program := p.ParseProgram()
+
+			assertNoParsingErrors(t, p.Errors())
+			assertNotEmptyProgram(t, program)
+
+			stmt := assertExpressionStatement(t, program.Statements[0])
+
+			exp, ok := stmt.Expression.(*ast.PrefixExpression)
+			if !ok {
+				t.Fatalf("stmt is not ast.PrefixExpression. got=%T", stmt.Expression)
+			}
+			if exp.Operator != data.operator {
+				t.Fatalf("exp.Operator is not '%s'. got=%s", data.operator, exp.Operator)
+			}
+			if !testIntegerLiteral(t, exp.Right, data.value) {
+				return
+			}
+		})
+	}
+}
+
+func assertTokenLiteral(t *testing.T, expected, actual string) {
+	if expected != actual {
+		t.Errorf("invalid literal, expected: %v, actual: %v", expected, actual)
+	}
+}
+
+func assertIdentifierValue(t *testing.T, expected, actual string) {
+	if expected != actual {
+		t.Errorf("invalid identifier value, expected: %v, actual: %v", expected, actual)
+	}
+}
+
+func assertNoParsingErrors(t *testing.T, errors []string) {
+	if len(errors) > 0 {
+		t.Errorf("unexpected parser errors: %v", errors)
+	}
+}
+
+func assertExpressionStatement(t *testing.T, stmt ast.Statement) *ast.ExpressionStatement {
+	expStmt, ok := stmt.(*ast.ExpressionStatement)
 	if !ok {
-		t.Fatalf("exp not *ast.IntegerLiteral. got=%T", stmt.Expression)
+		t.Errorf("invalid type of statement: %v, expected: *ast.ExpressionStatement, actual: %T", stmt, stmt)
 	}
-	if literal.Value != 5 {
-		t.Errorf("literal.Value not %d. got=%d", 5, literal.Value)
+
+	return expStmt
+}
+
+func assertLetStatement(t *testing.T, stmt ast.Statement) *ast.LetStatement {
+	letStmt, ok := stmt.(*ast.LetStatement)
+	if !ok {
+		t.Errorf("invalid type of statement: %v, expected: *ast.LetStatement, actual: %T", stmt, stmt)
 	}
-	if literal.TokenLiteral() != "5" {
-		t.Errorf("literal.TokenLiteral not %s. got=%s", "5",
-			literal.TokenLiteral())
+
+	return letStmt
+}
+
+func assertIdentifier(t *testing.T, exp ast.Expression) *ast.Identifier {
+	ident, ok := exp.(*ast.Identifier)
+	if !ok {
+		t.Errorf("invalid type of expression: %v, expected: *ast.Identifier, actual: %T", ident, ident)
 	}
+
+	return ident
+}
+
+func assertIntegerLiteral(t *testing.T, exp ast.Expression) *ast.IntegerLiteral {
+	intLit, ok := exp.(*ast.IntegerLiteral)
+	if !ok {
+		t.Errorf("invalid type of expression: %v, expected: *ast.IntegerLiteral, actual: %T", intLit, intLit)
+	}
+
+	return intLit
+}
+
+func assertReturnStatement(t *testing.T, stmt ast.Statement) *ast.ReturnStatement {
+	retStmt, ok := stmt.(*ast.ReturnStatement)
+	if !ok {
+		t.Errorf("invalid type of statement: %v, expected: *ast.ReturnStatement, actual: %T", stmt, stmt)
+	}
+
+	return retStmt
+}
+
+func assertNotEmptyProgram(t *testing.T, program *ast.Program) {
+	if len(program.Statements) == 0 {
+		t.Error("program doesn't contain any statements")
+	}
+}
+
+func testIntegerLiteral(t *testing.T, il ast.Expression, value int64) bool {
+	integ, ok := il.(*ast.IntegerLiteral)
+	if !ok {
+		t.Errorf("il not *ast.IntegerLiteral. got=%T", il)
+		return false
+	}
+
+	if integ.Value != value {
+		t.Errorf("integ.Value not %d. got=%d", value, integ.Value)
+		return false
+	}
+
+	if integ.TokenLiteral() != fmt.Sprintf("%d", value) {
+		t.Errorf("integ.TokenLiteral not %d. got=%s", value,
+			integ.TokenLiteral())
+		return false
+	}
+
+	return true
 }
