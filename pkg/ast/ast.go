@@ -165,9 +165,15 @@ type BooleanLiteral struct {
 	Value bool
 }
 
-func (b *BooleanLiteral) expressionNode()      {}
-func (b *BooleanLiteral) TokenLiteral() string { return b.Token.Literal }
-func (b *BooleanLiteral) String() string       { return b.Token.Literal }
+func (b *BooleanLiteral) expressionNode() {}
+
+func (b *BooleanLiteral) TokenLiteral() string {
+	return b.Token.Literal
+}
+
+func (b *BooleanLiteral) String() string {
+	return b.Token.Literal
+}
 
 type IfExpression struct {
 	Token       token.Token // The 'if' token
@@ -176,8 +182,12 @@ type IfExpression struct {
 	Alternative *BlockStatement
 }
 
-func (ie *IfExpression) expressionNode()      {}
-func (ie *IfExpression) TokenLiteral() string { return ie.Token.Literal }
+func (ie *IfExpression) expressionNode() {}
+
+func (ie *IfExpression) TokenLiteral() string {
+	return ie.Token.Literal
+}
+
 func (ie *IfExpression) String() string {
 	var out bytes.Buffer
 
@@ -199,8 +209,12 @@ type BlockStatement struct {
 	Statements []Statement
 }
 
-func (bs *BlockStatement) statementNode()       {}
-func (bs *BlockStatement) TokenLiteral() string { return bs.Token.Literal }
+func (bs *BlockStatement) statementNode() {}
+
+func (bs *BlockStatement) TokenLiteral() string {
+	return bs.Token.Literal
+}
+
 func (bs *BlockStatement) String() string {
 	var out bytes.Buffer
 
@@ -217,8 +231,12 @@ type FunctionLiteral struct {
 	Body       *BlockStatement
 }
 
-func (fl *FunctionLiteral) expressionNode()      {}
-func (fl *FunctionLiteral) TokenLiteral() string { return fl.Token.Literal }
+func (fl *FunctionLiteral) expressionNode() {}
+
+func (fl *FunctionLiteral) TokenLiteral() string {
+	return fl.Token.Literal
+}
+
 func (fl *FunctionLiteral) String() string {
 	var out bytes.Buffer
 
@@ -242,8 +260,12 @@ type CallExpression struct {
 	Arguments []Expression
 }
 
-func (ce *CallExpression) expressionNode()      {}
-func (ce *CallExpression) TokenLiteral() string { return ce.Token.Literal }
+func (ce *CallExpression) expressionNode() {}
+
+func (ce *CallExpression) TokenLiteral() string {
+	return ce.Token.Literal
+}
+
 func (ce *CallExpression) String() string {
 	var out bytes.Buffer
 
