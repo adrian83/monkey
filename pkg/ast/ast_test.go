@@ -1,9 +1,17 @@
 package ast
 
 import (
-	"github.com/adrian83/monkey/pkg/token"
 	"testing"
+
+	"github.com/adrian83/monkey/pkg/token"
 )
+
+func TestBodyHolderImplementations(t *testing.T) {
+	_ = []BodyHolder{
+		&Program{},
+		&BlockStatement{},
+	}
+}
 
 func TestString(t *testing.T) {
 	program := &Program{

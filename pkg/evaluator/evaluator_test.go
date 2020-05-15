@@ -31,7 +31,7 @@ func TestEvalIntegerExpression(t *testing.T) {
 	}
 
 	for _, tt := range tests {
-		evaluated := testEval(tt.input)
+		evaluated := testEval(t, tt.input)
 		testIntegerObject(t, evaluated, tt.expected)
 	}
 }
@@ -63,7 +63,7 @@ func TestEvalBooleanExpression(t *testing.T) {
 	}
 
 	for _, tt := range tests {
-		evaluated := testEval(tt.input)
+		evaluated := testEval(t, tt.input)
 		testBooleanObject(t, evaluated, tt.expected)
 	}
 }
@@ -82,7 +82,7 @@ func TestBangOperator(t *testing.T) {
 	}
 
 	for _, tt := range tests {
-		evaluated := testEval(tt.input)
+		evaluated := testEval(t, tt.input)
 		testBooleanObject(t, evaluated, tt.expected)
 	}
 }
@@ -102,7 +102,7 @@ func TestIfElseExpressions(t *testing.T) {
 	}
 
 	for _, tt := range tests {
-		evaluated := testEval(tt.input)
+		evaluated := testEval(t, tt.input)
 		integer, ok := tt.expected.(int)
 		if ok {
 			testIntegerObject(t, evaluated, int64(integer))
@@ -125,7 +125,7 @@ func TestReturnStatements(t *testing.T) {
 	}
 
 	for _, tt := range tests {
-		evaluated := testEval(tt.input)
+		evaluated := testEval(t, tt.input)
 		testIntegerObject(t, evaluated, tt.expected)
 	}
 }
@@ -170,7 +170,7 @@ func TestErrorHandling(t *testing.T) {
 	}
 
 	for _, tt := range tests {
-		evaluated := testEval(tt.input)
+		evaluated := testEval(t, tt.input)
 
 		errObj, ok := evaluated.(*object.Error)
 		if !ok {
@@ -196,14 +196,14 @@ func TestLetStatements(t *testing.T) {
 	}
 
 	for _, tt := range tests {
-		testIntegerObject(t, testEval(tt.input), tt.expected)
+		testIntegerObject(t, testEval(t, tt.input), tt.expected)
 	}
 }
 
 func TestFunctionObject(t *testing.T) {
 	input := "fn(x) { x + 2; };"
 
-	evaluated := testEval(input)
+	evaluated := testEval(t, input)
 	fn, ok := evaluated.(*object.Function)
 	if !ok {
 		t.Fatalf("object is not Function. got=%T (%+v)", evaluated, evaluated)
@@ -239,7 +239,7 @@ func TestFunctionApplication(t *testing.T) {
 	}
 
 	for _, tt := range tests {
-		testIntegerObject(t, testEval(tt.input), tt.expected)
+		testIntegerObject(t, testEval(t, tt.input), tt.expected)
 	}
 }
 
@@ -252,7 +252,7 @@ let newAdder = fn(x) {
 let addTwo = newAdder(2);
 addTwo(2);`
 
-	testIntegerObject(t, testEval(input), 4)
+	testIntegerObject(t, testEval(t, input), 4)
 }
 
 func testNullObject(t *testing.T, obj object.Object) bool {
@@ -277,10 +277,15 @@ func testBooleanObject(t *testing.T, obj object.Object, expected bool) bool {
 	return true
 }
 
-func testEval(input string) object.Object {
+func testEval(t *testing.T, input string) object.Object {
 	l := lexer.New(input)
 	p := parser.New(l)
-	program := p.ParseProgram()
+	program, err := p.ParseProgram()
+
+	if err != nil {
+		t.Errorf("cannot parse program, error: %v", err)
+	}
+
 	env := object.NewEnvironment()
 
 	return Eval(program, env)

@@ -1,8 +1,10 @@
 package parser
 
 import (
+	"errors"
 	"fmt"
 	"strconv"
+	"strings"
 
 	"github.com/adrian83/monkey/pkg/ast"
 	"github.com/adrian83/monkey/pkg/lexer"
@@ -84,9 +86,11 @@ func New(l *lexer.Lexer) *Parser {
 }
 
 func (p *Parser) parseCallExpression(function ast.Expression) ast.Expression {
-	exp := &ast.CallExpression{Token: p.curToken, Function: function}
-	exp.Arguments = p.parseCallArguments()
-	return exp
+	return &ast.CallExpression{
+		Token:     p.curToken,
+		Function:  function,
+		Arguments: p.parseCallArguments(),
+	}
 }
 
 func (p *Parser) parseCallArguments() []ast.Expression {
@@ -148,17 +152,17 @@ func (p *Parser) parseFunctionLiteral() ast.Expression {
 }
 
 func (p *Parser) parseFunctionParameters() []*ast.Identifier {
-	identifiers := []*ast.Identifier{}
 
 	if p.peekTokenIs(token.RPAREN) {
 		p.nextToken()
-		return identifiers
+		return nil
 	}
 
 	p.nextToken()
 
 	ident := &ast.Identifier{Token: p.curToken, Value: p.curToken.Literal}
-	identifiers = append(identifiers, ident)
+
+	identifiers := []*ast.Identifier{ident}
 
 	for p.peekTokenIs(token.COMMA) {
 		p.nextToken()
@@ -175,14 +179,13 @@ func (p *Parser) parseFunctionParameters() []*ast.Identifier {
 }
 
 func (p *Parser) parseIfExpression() ast.Expression {
-	expression := &ast.IfExpression{Token: p.curToken}
 
 	if !p.expectPeek(token.LPAREN) {
 		return nil
 	}
 
 	p.nextToken()
-	expression.Condition = p.parseExpression(LOWEST)
+	condition := p.parseExpression(LOWEST)
 
 	if !p.expectPeek(token.RPAREN) {
 		return nil
@@ -192,8 +195,9 @@ func (p *Parser) parseIfExpression() ast.Expression {
 		return nil
 	}
 
-	expression.Consequence = p.parseBlockStatement()
+	consequence := p.parseBlockStatement()
 
+	var alternative *ast.BlockStatement
 	if p.peekTokenIs(token.ELSE) {
 		p.nextToken()
 
@@ -201,27 +205,34 @@ func (p *Parser) parseIfExpression() ast.Expression {
 			return nil
 		}
 
-		expression.Alternative = p.parseBlockStatement()
+		alternative = p.parseBlockStatement()
 	}
 
-	return expression
+	return &ast.IfExpression{
+		Token:       p.curToken,
+		Condition:   condition,
+		Consequence: consequence,
+		Alternative: alternative,
+	}
 }
 
 func (p *Parser) parseBlockStatement() *ast.BlockStatement {
-	block := &ast.BlockStatement{Token: p.curToken}
-	block.Statements = []ast.Statement{}
+	stmts := make([]ast.Statement, 0)
 
 	p.nextToken()
 
 	for !p.curTokenIs(token.RBRACE) && !p.curTokenIs(token.EOF) {
 		stmt := p.parseStatement()
 		if stmt != nil {
-			block.Statements = append(block.Statements, stmt)
+			stmts = append(stmts, stmt)
 		}
 		p.nextToken()
 	}
 
-	return block
+	return &ast.BlockStatement{
+		Token:      p.curToken,
+		Statements: stmts,
+	}
 }
 
 func (p *Parser) parseGroupedExpression() ast.Expression {
@@ -251,7 +262,7 @@ func (p *Parser) nextToken() {
 	p.peekToken = p.l.NextToken()
 }
 
-func (p *Parser) ParseProgram() *ast.Program {
+func (p *Parser) ParseProgram() (*ast.Program, error) {
 	program := &ast.Program{}
 	program.Statements = []ast.Statement{}
 
@@ -263,7 +274,12 @@ func (p *Parser) ParseProgram() *ast.Program {
 		p.nextToken()
 	}
 
-	return program
+	if len(p.errors) > 0 {
+		errMsg := "error while parsing input: " + strings.Join(p.errors, ", ")
+		return program, errors.New(errMsg)
+	}
+
+	return program, nil
 }
 
 func (p *Parser) parseStatement() ast.Statement {

@@ -1,5 +1,7 @@
 package token
 
+type Operator string
+
 const (
 	ILLEGAL = "ILLEGAL"
 	EOF     = "EOF"
