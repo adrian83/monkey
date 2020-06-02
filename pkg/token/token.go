@@ -7,8 +7,9 @@ const (
 	EOF     = "EOF"
 
 	// Identifiers + literals
-	IDENT = "IDENT" // add, foobar, x, y, ...
-	INT   = "INT"   // 1343456
+	IDENT  = "IDENT" // add, foobar, x, y, ...
+	INT    = "INT"   // 1343456
+	STRING = "STRING"
 
 	// Operators
 	ASSIGN   = "="
@@ -39,6 +40,9 @@ const (
 	IF       = "IF"
 	ELSE     = "ELSE"
 	RETURN   = "RETURN"
+
+	LBRACKET = "["
+	RBRACKET = "]"
 )
 
 type TokenType string

@@ -10,10 +10,13 @@ import (
 
 const (
 	TypeInteger  = "INTEGER"
+	TypeString   = "STRING"
 	TypeBoolean  = "BOOLEAN"
+	TypeArray    = "ARRAY"
 	TypeNull     = "NULL"
 	TypeError    = "ERROR"
 	TypeFunction = "FUNCTION"
+	TypeBuiltin  = "BUILTIN"
 
 	ReturnVal = "RETURN_VALUE"
 )
@@ -35,6 +38,18 @@ func (i *Integer) Inspect() string {
 
 func (i *Integer) Type() ObjectType {
 	return TypeInteger
+}
+
+type String struct {
+	Value string
+}
+
+func (s *String) Type() ObjectType {
+	return TypeString
+}
+
+func (s *String) Inspect() string {
+	return s.Value
 }
 
 type Boolean struct {
@@ -110,3 +125,37 @@ func (f *Function) Inspect() string {
 
 	return out.String()
 }
+
+type Array struct {
+	Elements []Object
+}
+
+func (ao *Array) Type() ObjectType {
+	return TypeArray
+}
+
+func (ao *Array) Inspect() string {
+	var out bytes.Buffer
+
+	elements := []string{}
+	for _, e := range ao.Elements {
+		elements = append(elements, e.Inspect())
+	}
+
+	out.WriteString("[")
+	out.WriteString(strings.Join(elements, ", "))
+	out.WriteString("]")
+
+	return out.String()
+}
+
+type BuiltinFunction func(args ...Object) Object
+
+type Builtin struct {
+	Fn BuiltinFunction
+}
+
+func (b *Builtin) Type() ObjectType {
+	return TypeBuiltin
+}
+func (b *Builtin) Inspect() string { return "builtin function" }

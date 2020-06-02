@@ -119,6 +119,32 @@ func TestIntegerLiteralExpression(t *testing.T) {
 	}
 }
 
+func TestStringLiteralExpression(t *testing.T) {
+	testData := map[string]struct {
+		input string
+		value string
+	}{
+		"case 1": {`"foo"`, "foo"},
+		"case 2": {`"bar";`, "bar"},
+	}
+
+	for name, tData := range testData {
+		data := tData
+
+		t.Run(name, func(t *testing.T) {
+			program := parseProgram(t, data.input)
+
+			assertStatementsCount(t, program, 1)
+
+			expStmt := toExpressionStatement(t, program.Statements[0])
+			strLit := toStringLiteral(t, expStmt.Expression)
+
+			assertLiteral(t, strLit, data.value)
+			assertTokenLiteral(t, data.value, strLit.NodeToken().Literal)
+		})
+	}
+}
+
 func TestBooleanExpression(t *testing.T) {
 	testData := map[string]struct {
 		input   string
@@ -245,6 +271,8 @@ func TestOperatorPrecedenceParsing(t *testing.T) {
 		"case 22": {"a + add(b * c) + d", "((a + add((b * c))) + d)", 1},
 		"case 23": {"add(a, b, 1, 2 * 3, 4 + 5, add(6, 7 * 8))", "add(a, b, 1, (2 * 3), (4 + 5), add(6, (7 * 8)))", 1},
 		"case 24": {"add(a + b + c * d / f + g)", "add((((a + b) + ((c * d) / f)) + g))", 1},
+		"case 25": {"a * [1, 2, 3, 4][b * c] * d", "((a * ([1, 2, 3, 4][(b * c)])) * d)", 1},
+		"case 26": {"add(a * b[2], b[1], 2 * [1, 2][1])", "add((a * (b[2])), (b[1]), (2 * ([1, 2][1])))", 1},
 	}
 
 	for name, tData := range testData {
@@ -472,10 +500,71 @@ func TestCallExpressionParsing(t *testing.T) {
 	}
 }
 
+func TestParsingArrayLiterals(t *testing.T) {
+	input := "[1, 2 * 2, 3 + 3]"
+
+	program := parseProgram(t, input)
+
+	stmt, ok := program.Statements[0].(*ast.ExpressionStatement)
+	array, ok := stmt.Expression.(*ast.ArrayLiteral)
+	if !ok {
+		t.Fatalf("exp not ast.ArrayLiteral. got=%T", stmt.Expression)
+	}
+
+	if len(array.Elements) != 3 {
+		t.Fatalf("len(array.Elements) not 3. got=%d", len(array.Elements))
+	}
+
+	assertLiteral(t, array.Elements[0], 1)
+
+	infixExp1 := assertInfixExpression(t, array.Elements[1])
+	assertOperator(t, infixExp1.Operator, token.ASTERISK)
+	assertLiteral(t, infixExp1.Left, 2)
+	assertLiteral(t, infixExp1.Right, 2)
+
+	infixExp2 := assertInfixExpression(t, array.Elements[2])
+	assertOperator(t, infixExp2.Operator, token.PLUS)
+	assertLiteral(t, infixExp2.Left, 3)
+	assertLiteral(t, infixExp2.Right, 3)
+}
+
+func TestParsingIndexExpressions(t *testing.T) {
+	input := "myArray[1 + 2]"
+
+	program := parseProgram(t, input)
+
+	stmt := toExpressionStatement(t, program.Statements[0])
+
+	indexExp := toIndexExpression(t, stmt.Expression)
+
+	assertLiteral(t, indexExp.Left, "myArray")
+
+	infixExp := assertInfixExpression(t, indexExp.Index)
+	assertOperator(t, infixExp.Operator, token.PLUS)
+	assertLiteral(t, infixExp.Left, 1)
+	assertLiteral(t, infixExp.Right, 2)
+}
+
 func assertTokenLiteral(t *testing.T, expected, actual string) {
 	if strings.ToLower(expected) != strings.ToLower(actual) {
 		t.Errorf("invalid literal, expected: %v, actual: %v", expected, actual)
 	}
+}
+
+func toStringLiteral(t *testing.T, exp ast.Expression) *ast.StringLiteral {
+	strLit, ok := exp.(*ast.StringLiteral)
+	if !ok {
+		t.Errorf("invalid ast.Expression type, expected: *ast.StringLiteral, actual: %T", exp)
+	}
+	return strLit
+}
+
+func toIndexExpression(t *testing.T, exp ast.Expression) *ast.IndexExpression {
+	indexExp, ok := exp.(*ast.IndexExpression)
+	if !ok {
+		t.Errorf("invalid ast.Expression type, expected: *ast.IndexExpression, actual: %T", exp)
+	}
+	return indexExp
 }
 
 func assertIdentifierValue(t *testing.T, expected, actual string) {
@@ -574,33 +663,25 @@ func assertInfixExpression(t *testing.T, exp ast.Expression) *ast.InfixExpressio
 }
 
 func assertLiteral(t *testing.T, il ast.Expression, value interface{}) {
-	switch v := value.(type) {
-	case bool:
-		boolLit, ok := il.(*ast.BooleanLiteral)
-		if !ok {
-			t.Errorf("invalid ast.Expression type, expected: *ast.BooleanLiteral, actual: %T", il)
-		}
-		assert.Equal(t, v, boolLit.Value)
 
-	case int:
-		intLit, ok := il.(*ast.IntegerLiteral)
-		if !ok {
-			t.Errorf("invalid ast.Expression type, expected: *ast.IntegerLiteral, actual: %T", il)
-		}
-		assert.Equal(t, int64(v), intLit.Value)
+	switch expVal := il.(type) {
+	case *ast.BooleanLiteral:
+		assert.Equal(t, value, expVal.Value)
+	case *ast.IntegerLiteral:
 
-	case int64:
-		intLit, ok := il.(*ast.IntegerLiteral)
-		if !ok {
-			t.Errorf("invalid ast.Expression type, expected: *ast.IntegerLiteral, actual: %T", il)
+		switch numbVal := value.(type) {
+		case int:
+			assert.Equal(t, int64(numbVal), expVal.Value)
+		case int64:
+			assert.Equal(t, numbVal, expVal.Value)
+		default:
+			t.Errorf("unsuported number type: %T", numbVal)
 		}
-		assert.Equal(t, v, intLit.Value)
-	case string:
-		ident, ok := il.(*ast.Identifier)
-		if !ok {
-			t.Errorf("invalid ast.Expression type, expected: *ast.Identifier, actual: %T", il)
-		}
-		assert.Equal(t, v, ident.Value)
+
+	case *ast.Identifier:
+		assert.Equal(t, value, expVal.Value)
+	case *ast.StringLiteral:
+		assert.Equal(t, value, expVal.Value)
 	default:
 		t.Errorf("unsuported ast.Expression type: %T", il)
 	}
