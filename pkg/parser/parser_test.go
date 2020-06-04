@@ -545,6 +545,83 @@ func TestParsingIndexExpressions(t *testing.T) {
 	assertLiteral(t, infixExp.Right, 2)
 }
 
+func TestParsingHashLiteralsStringKeys(t *testing.T) {
+	testData := map[string]struct {
+		input    string
+		expected map[string]int64
+	}{
+		"case 1": {`{"one": 1, "two": 2, "three": 3}`, map[string]int64{"one": 1, "two": 2, "three": 3}},
+		"case 2": {`{}`, nil},
+	}
+
+	for name, tData := range testData {
+		data := tData
+
+		t.Run(name, func(t *testing.T) {
+			program := parseProgram(t, data.input)
+
+			expStmt := toExpressionStatement(t, program.Statements[0])
+			hashLit := toHashLiteral(t, expStmt.Expression)
+
+			if len(hashLit.Pairs) != len(data.expected) {
+				t.Errorf("hash.Pairs has wrong length. got=%d", len(hashLit.Pairs))
+			}
+
+			for key, value := range hashLit.Pairs {
+
+				strLit := toStringLiteral(t, key)
+				expectedValue := data.expected[strLit.String()]
+
+				assertLiteral(t, value, expectedValue)
+			}
+		})
+	}
+}
+
+// func TestParsingHashLiteralsWithExpressions(t *testing.T) {
+// 	input := `{"one": 0 + 1, "two": 10 - 8, "three": 15 / 5}`
+
+// 	program := parseProgram(t, input)
+
+// 	stmt := program.Statements[0].(*ast.ExpressionStatement)
+// 	hash, ok := stmt.Expression.(*ast.HashLiteral)
+// 	if !ok {
+// 		t.Fatalf("exp is not ast.HashLiteral. got=%T", stmt.Expression)
+// 	}
+
+// 	if len(hash.Pairs) != 3 {
+// 		t.Errorf("hash.Pairs has wrong length. got=%d", len(hash.Pairs))
+// 	}
+
+// 	tests := map[string]func(ast.Expression){
+// 		"one": func(e ast.Expression) {
+// 			testInfixExpression(t, e, 0, "+", 1)
+// 		},
+// 		"two": func(e ast.Expression) {
+// 			testInfixExpression(t, e, 10, "-", 8)
+// 		},
+// 		"three": func(e ast.Expression) {
+// 			testInfixExpression(t, e, 15, "/", 5)
+// 		},
+// 	}
+
+// 	for key, value := range hash.Pairs {
+// 		literal, ok := key.(*ast.StringLiteral)
+// 		if !ok {
+// 			t.Errorf("key is not ast.StringLiteral. got=%T", key)
+// 			continue
+// 		}
+
+// 		testFunc, ok := tests[literal.String()]
+// 		if !ok {
+// 			t.Errorf("No test function for key %q found", literal.String())
+// 			continue
+// 		}
+
+// 		testFunc(value)
+// 	}
+// }
+
 func assertTokenLiteral(t *testing.T, expected, actual string) {
 	if strings.ToLower(expected) != strings.ToLower(actual) {
 		t.Errorf("invalid literal, expected: %v, actual: %v", expected, actual)
@@ -557,6 +634,14 @@ func toStringLiteral(t *testing.T, exp ast.Expression) *ast.StringLiteral {
 		t.Errorf("invalid ast.Expression type, expected: *ast.StringLiteral, actual: %T", exp)
 	}
 	return strLit
+}
+
+func toHashLiteral(t *testing.T, exp ast.Expression) *ast.HashLiteral {
+	hashLit, ok := exp.(*ast.HashLiteral)
+	if !ok {
+		t.Errorf("invalid ast.Expression type, expected: *ast.HashLiteral, actual: %T", exp)
+	}
+	return hashLit
 }
 
 func toIndexExpression(t *testing.T, exp ast.Expression) *ast.IndexExpression {
