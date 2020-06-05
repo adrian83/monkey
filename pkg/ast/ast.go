@@ -2,6 +2,7 @@ package ast
 
 import (
 	"bytes"
+	"fmt"
 	"strings"
 
 	"github.com/adrian83/monkey/pkg/token"
@@ -37,7 +38,7 @@ func (p *Program) NodeToken() token.Token {
 		return p.Statements[0].NodeToken()
 	}
 
-	return token.Token{Type: token.EOF, Literal: ""}
+	return token.Token{Type: token.Eof, Literal: ""}
 }
 
 func (p *Program) String() string {
@@ -104,12 +105,7 @@ func (pe *PrefixExpression) NodeToken() token.Token {
 }
 
 func (pe *PrefixExpression) String() string {
-	var out bytes.Buffer
-	out.WriteString("(")
-	out.WriteString(pe.Operator)
-	out.WriteString(pe.Right.String())
-	out.WriteString(")")
-	return out.String()
+	return fmt.Sprintf("(%v%v)", pe.Operator, pe.Right.String())
 }
 
 // expression
@@ -125,13 +121,7 @@ func (ie *InfixExpression) NodeToken() token.Token {
 }
 
 func (ie *InfixExpression) String() string {
-	var out bytes.Buffer
-	out.WriteString("(")
-	out.WriteString(ie.Left.String())
-	out.WriteString(" " + ie.Operator + " ")
-	out.WriteString(ie.Right.String())
-	out.WriteString(")")
-	return out.String()
+	return fmt.Sprintf("(%v %v %v)", ie.Left.String(), ie.Operator, ie.Right.String())
 }
 
 // expression
@@ -161,19 +151,13 @@ func (ie *IfExpression) NodeToken() token.Token {
 }
 
 func (ie *IfExpression) String() string {
-	var out bytes.Buffer
-
-	out.WriteString("if")
-	out.WriteString(ie.Condition.String())
-	out.WriteString(" ")
-	out.WriteString(ie.Consequence.String())
+	out := fmt.Sprintf("if %v %v", ie.Condition.String(), ie.Consequence.String())
 
 	if ie.Alternative != nil {
-		out.WriteString("else ")
-		out.WriteString(ie.Alternative.String())
+		out += fmt.Sprintf("else %v", ie.Alternative.String())
 	}
 
-	return out.String()
+	return out
 }
 
 // expression
@@ -188,20 +172,12 @@ func (fl *FunctionLiteral) NodeToken() token.Token {
 }
 
 func (fl *FunctionLiteral) String() string {
-	var out bytes.Buffer
-
 	params := []string{}
 	for _, p := range fl.Parameters {
 		params = append(params, p.String())
 	}
 
-	out.WriteString(fl.Token.Literal)
-	out.WriteString("(")
-	out.WriteString(strings.Join(params, ", "))
-	out.WriteString(") ")
-	out.WriteString(fl.Body.String())
-
-	return out.String()
+	return fmt.Sprintf("%v(%v) %v", fl.Token.Literal, strings.Join(params, ", "), fl.Body.String())
 }
 
 // expression
@@ -386,15 +362,13 @@ func (rs *ReturnStatement) NodeToken() token.Token {
 }
 
 func (rs *ReturnStatement) String() string {
-	var out bytes.Buffer
-
-	out.WriteString(rs.NodeToken().Literal + " ")
+	out := fmt.Sprintf("%v ", rs.NodeToken().Literal)
 
 	if rs.ReturnValue != nil {
-		out.WriteString(rs.ReturnValue.String())
+		out += rs.ReturnValue.String()
 	}
 
-	out.WriteString(";")
+	out += ";"
 
-	return out.String()
+	return out
 }

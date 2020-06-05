@@ -4,6 +4,13 @@ import (
 	"github.com/adrian83/monkey/pkg/token"
 )
 
+const (
+	lowerCaseA = 'a'
+	upperCaseA = 'A'
+	lowerCaseZ = 'z'
+	upperCaseZ = 'Z'
+)
+
 func New(input string) *Lexer {
 	l := &Lexer{
 		input: input,
@@ -36,60 +43,60 @@ func (l *Lexer) NextToken() token.Token {
 
 	switch l.ch {
 	case '"':
-		tok.Type = token.STRING
+		tok.Type = token.TypeString
 		tok.Literal = l.readString()
 
 	case '+':
-		tok = newToken(token.PLUS, l.ch)
+		tok = newToken(token.OperatorPlus, l.ch)
 	case '-':
-		tok = newToken(token.MINUS, l.ch)
+		tok = newToken(token.OperatorMinus, l.ch)
 	case '/':
-		tok = newToken(token.SLASH, l.ch)
+		tok = newToken(token.OperatorSlash, l.ch)
 	case '*':
-		tok = newToken(token.ASTERISK, l.ch)
+		tok = newToken(token.OperatorAsterisk, l.ch)
 	case '<':
-		tok = newToken(token.LT, l.ch)
+		tok = newToken(token.OperatorLowerThan, l.ch)
 	case '>':
-		tok = newToken(token.GT, l.ch)
+		tok = newToken(token.OperatorGreaterThan, l.ch)
 	case ';':
-		tok = newToken(token.SEMICOLON, l.ch)
+		tok = newToken(token.DelimiterSemicolon, l.ch)
 	case '(':
-		tok = newToken(token.LPAREN, l.ch)
+		tok = newToken(token.DelimiterLeftParenthesis, l.ch)
 	case ')':
-		tok = newToken(token.RPAREN, l.ch)
+		tok = newToken(token.DelimiterRightParenthesis, l.ch)
 	case ',':
-		tok = newToken(token.COMMA, l.ch)
+		tok = newToken(token.DelimiterComma, l.ch)
 	case '{':
-		tok = newToken(token.LBRACE, l.ch)
+		tok = newToken(token.DelimiterLeftBrace, l.ch)
 	case '}':
-		tok = newToken(token.RBRACE, l.ch)
+		tok = newToken(token.DelimiterRightBrace, l.ch)
 	case '[':
-		tok = newToken(token.LBRACKET, l.ch)
+		tok = newToken(token.DelimiterLeftBracket, l.ch)
 	case ']':
-		tok = newToken(token.RBRACKET, l.ch)
+		tok = newToken(token.DelimiterRightBracket, l.ch)
 	case ':':
-		tok = newToken(token.COLON, l.ch)
+		tok = newToken(token.DelimiterColon, l.ch)
 	case 0:
 		tok.Literal = ""
-		tok.Type = token.EOF
+		tok.Type = token.Eof
 
 	case '=':
 		if l.peekChar() == '=' {
 			ch := l.ch
 			l.readChar()
 			literal := string(ch) + string(l.ch)
-			tok = token.Token{Type: token.EQ, Literal: literal}
+			tok = token.Token{Type: token.OperatorEqual, Literal: literal}
 		} else {
-			tok = newToken(token.ASSIGN, l.ch)
+			tok = newToken(token.OperatorAssign, l.ch)
 		}
 	case '!':
 		if l.peekChar() == '=' {
 			ch := l.ch
 			l.readChar()
 			literal := string(ch) + string(l.ch)
-			tok = token.Token{Type: token.NOT_EQ, Literal: literal}
+			tok = token.Token{Type: token.OperatorNotEqual, Literal: literal}
 		} else {
-			tok = newToken(token.BANG, l.ch)
+			tok = newToken(token.OperatorBang, l.ch)
 		}
 	default:
 		if isLetter(l.ch) {
@@ -97,11 +104,11 @@ func (l *Lexer) NextToken() token.Token {
 			tok.Type = token.LookupIdent(tok.Literal)
 			return tok
 		} else if isDigit(l.ch) {
-			tok.Type = token.INT
+			tok.Type = token.TypeInteger
 			tok.Literal = l.readNumber()
 			return tok
 		} else {
-			tok = newToken(token.ILLEGAL, l.ch)
+			tok = newToken(token.Illegal, l.ch)
 		}
 	}
 
@@ -137,7 +144,7 @@ func (l *Lexer) readIdentifier() string {
 }
 
 func isLetter(ch byte) bool {
-	return 'a' <= ch && ch <= 'z' || 'A' <= ch && ch <= 'Z' || ch == '_'
+	return lowerCaseA <= ch && ch <= lowerCaseZ || upperCaseA <= ch && ch <= upperCaseZ || ch == '_'
 }
 
 func (l *Lexer) skipWhitespace() {

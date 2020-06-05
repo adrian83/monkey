@@ -33,10 +33,10 @@ func TestLetStatements(t *testing.T) {
 
 			assertStatementsCount(t, program, 1)
 
-			letStmt := assertLetStatement(t, program.Statements[0])
+			letStmt := toLetStatement(t, program.Statements[0])
 
 			assertIdentifierValue(t, data.name, letStmt.Name.Value)
-			assertTokenLiteral(t, token.LET, letStmt.NodeToken().Literal)
+			assertTokenLiteral(t, token.KeywordLet, letStmt.NodeToken().Literal)
 			assertLiteral(t, letStmt.Value, data.value)
 		})
 	}
@@ -60,9 +60,9 @@ func TestReturnStatements(t *testing.T) {
 
 			assertStatementsCount(t, program, 1)
 
-			returnStmt := assertReturnStatement(t, program.Statements[0])
+			returnStmt := toReturnStatement(t, program.Statements[0])
 
-			assertTokenLiteral(t, token.RETURN, returnStmt.NodeToken().Literal)
+			assertTokenLiteral(t, token.KeywordReturn, returnStmt.NodeToken().Literal)
 			assertLiteral(t, returnStmt.ReturnValue, data.value)
 		})
 	}
@@ -85,7 +85,7 @@ func TestIdentifierExpression(t *testing.T) {
 			assertStatementsCount(t, program, 1)
 
 			stmt := toExpressionStatement(t, program.Statements[0])
-			ident := assertIdentifier(t, stmt.Expression)
+			ident := toIdentifier(t, stmt.Expression)
 
 			assertIdentifierValue(t, data.literal, ident.Value)
 			assertTokenLiteral(t, data.literal, ident.NodeToken().Literal)
@@ -151,10 +151,10 @@ func TestBooleanExpression(t *testing.T) {
 		value   bool
 		literal string
 	}{
-		"case 1": {"true", true, token.TRUE},
-		"case 2": {"true;", true, token.TRUE},
-		"case 3": {"false", false, token.FALSE},
-		"case 4": {"false;", false, token.FALSE},
+		"case 1": {"true", true, token.KeywordTrue},
+		"case 2": {"true;", true, token.KeywordTrue},
+		"case 3": {"false", false, token.KeywordFalse},
+		"case 4": {"false;", false, token.KeywordFalse},
 	}
 
 	for name, tData := range testData {
@@ -166,7 +166,7 @@ func TestBooleanExpression(t *testing.T) {
 			assertStatementsCount(t, program, 1)
 
 			stmt := toExpressionStatement(t, program.Statements[0])
-			boolLit := assertBooleanLiteral(t, stmt.Expression)
+			boolLit := toBooleanLiteral(t, stmt.Expression)
 
 			assertLiteral(t, stmt.Expression, data.value)
 			assertTokenLiteral(t, data.literal, boolLit.NodeToken().Literal)
@@ -195,7 +195,7 @@ func TestParsingPrefixExpressions(t *testing.T) {
 			assertStatementsCount(t, program, 1)
 
 			stmt := toExpressionStatement(t, program.Statements[0])
-			prfxExp := assertPrefixExpression(t, stmt.Expression)
+			prfxExp := toPrefixExpression(t, stmt.Expression)
 
 			assertOperator(t, prfxExp.Operator, data.operator)
 			assertLiteral(t, prfxExp.Right, data.value)
@@ -232,7 +232,7 @@ func TestParsingInfixExpressions(t *testing.T) {
 			assertStatementsCount(t, program, 1)
 
 			exprStmt := toExpressionStatement(t, program.Statements[0])
-			infixExp := assertInfixExpression(t, exprStmt.Expression)
+			infixExp := toInfixExpression(t, exprStmt.Expression)
 
 			assertOperator(t, data.operator, infixExp.Operator)
 			assertLiteral(t, infixExp.Left, data.leftValue)
@@ -297,8 +297,8 @@ func TestIfExpression(t *testing.T) {
 		condOperator string
 		consequence  string
 	}{
-		"case 1": {`if (x < y) { x }`, "x", "y", token.LT, "x"},
-		"case 2": {`if (a == b) { b }`, "a", "b", token.EQ, "b"},
+		"case 1": {`if (x < y) { x }`, "x", "y", token.OperatorLowerThan, "x"},
+		"case 2": {`if (a == b) { b }`, "a", "b", token.OperatorEqual, "b"},
 	}
 
 	for name, tData := range testData {
@@ -310,9 +310,9 @@ func TestIfExpression(t *testing.T) {
 			assertStatementsCount(t, program, 1)
 
 			expStmt := toExpressionStatement(t, program.Statements[0])
-			ifExp := assertIfExpression(t, expStmt.Expression)
+			ifExp := toIfExpression(t, expStmt.Expression)
 
-			infixExp := assertInfixExpression(t, ifExp.Condition)
+			infixExp := toInfixExpression(t, ifExp.Condition)
 
 			assertOperator(t, data.condOperator, infixExp.Operator)
 			assertLiteral(t, infixExp.Left, data.condLeft)
@@ -321,7 +321,7 @@ func TestIfExpression(t *testing.T) {
 			assertStatementsCount(t, ifExp.Consequence, 1)
 
 			consExpStmt := toExpressionStatement(t, ifExp.Consequence.Statements[0])
-			ident := assertIdentifier(t, consExpStmt.Expression)
+			ident := toIdentifier(t, consExpStmt.Expression)
 
 			assertIdentifierValue(t, data.consequence, ident.Value)
 
@@ -339,8 +339,8 @@ func TestIfElseExpression(t *testing.T) {
 		consequence  string
 		alternative  string
 	}{
-		"case 1": {`if (x < y) { x } else { y }`, "x", "y", token.LT, "x", "y"},
-		"case 2": {`if (a == b) { b } else { a }`, "a", "b", token.EQ, "b", "a"},
+		"case 1": {`if (x < y) { x } else { y }`, "x", "y", token.OperatorLowerThan, "x", "y"},
+		"case 2": {`if (a == b) { b } else { a }`, "a", "b", token.OperatorEqual, "b", "a"},
 	}
 
 	for name, tData := range testData {
@@ -352,9 +352,9 @@ func TestIfElseExpression(t *testing.T) {
 			assertStatementsCount(t, program, 1)
 
 			expStmt := toExpressionStatement(t, program.Statements[0])
-			ifExp := assertIfExpression(t, expStmt.Expression)
+			ifExp := toIfExpression(t, expStmt.Expression)
 
-			infixExp := assertInfixExpression(t, ifExp.Condition)
+			infixExp := toInfixExpression(t, ifExp.Condition)
 
 			assertOperator(t, data.condOperator, infixExp.Operator)
 			assertLiteral(t, infixExp.Left, data.condLeft)
@@ -363,12 +363,12 @@ func TestIfElseExpression(t *testing.T) {
 			assertStatementsCount(t, ifExp.Consequence, 1)
 
 			consExpStmt := toExpressionStatement(t, ifExp.Consequence.Statements[0])
-			consIdent := assertIdentifier(t, consExpStmt.Expression)
+			consIdent := toIdentifier(t, consExpStmt.Expression)
 
 			assertIdentifierValue(t, data.consequence, consIdent.Value)
 
 			altExpStmt := toExpressionStatement(t, ifExp.Alternative.Statements[0])
-			altIdent := assertIdentifier(t, altExpStmt.Expression)
+			altIdent := toIdentifier(t, altExpStmt.Expression)
 
 			assertIdentifierValue(t, data.alternative, altIdent.Value)
 		})
@@ -384,12 +384,12 @@ func TestFunctionLiteralParsing(t *testing.T) {
 		"case 1": {
 			`fn(x, y) { x + y; }`,
 			[]string{"x", "y"},
-			[]string{"x", token.PLUS, "y"},
+			[]string{"x", token.OperatorPlus, "y"},
 		},
 		"case 2": {
 			`fn(a, b) { a * b }`,
 			[]string{"a", "b"},
-			[]string{"a", token.ASTERISK, "b"},
+			[]string{"a", token.OperatorAsterisk, "b"},
 		},
 	}
 
@@ -402,13 +402,13 @@ func TestFunctionLiteralParsing(t *testing.T) {
 			assertStatementsCount(t, program, 1)
 
 			expStmt := toExpressionStatement(t, program.Statements[0])
-			function := assertFunctionLiteral(t, expStmt.Expression)
+			function := toFunctionLiteral(t, expStmt.Expression)
 
 			assertParameters(t, function.Parameters, data.params)
 			assertStatementsCount(t, function.Body, 1)
 
 			bodyExpStmt := toExpressionStatement(t, function.Body.Statements[0])
-			infixExp := assertInfixExpression(t, bodyExpStmt.Expression)
+			infixExp := toInfixExpression(t, bodyExpStmt.Expression)
 
 			assertOperator(t, data.bodyExp[1], infixExp.Operator)
 			assertLiteral(t, infixExp.Left, data.bodyExp[0])
@@ -422,9 +422,9 @@ func TestFunctionParameterParsing(t *testing.T) {
 		input          string
 		expectedParams []string
 	}{
-		"case 1": {input: "fn() {};", expectedParams: []string{}},
-		"case 2": {input: "fn(x) {};", expectedParams: []string{"x"}},
-		"case 3": {input: "fn(x, y, z) {};", expectedParams: []string{"x", "y", "z"}},
+		"case 1": {"fn() {};", []string{}},
+		"case 2": {"fn(x) {};", []string{"x"}},
+		"case 3": {"fn(x, y, z) {};", []string{"x", "y", "z"}},
 	}
 
 	for name, tData := range testData {
@@ -436,7 +436,7 @@ func TestFunctionParameterParsing(t *testing.T) {
 			assertStatementsCount(t, program, 1)
 
 			expStmt := toExpressionStatement(t, program.Statements[0])
-			function := assertFunctionLiteral(t, expStmt.Expression)
+			function := toFunctionLiteral(t, expStmt.Expression)
 
 			assertParameters(t, function.Parameters, data.expectedParams)
 		})
@@ -459,17 +459,17 @@ func TestCallExpressionParsing(t *testing.T) {
 			"add(5 - 1, 2 * 3, 4 + 5);",
 			"add",
 			[]param{
-				{5, 1, token.MINUS},
-				{2, 3, token.ASTERISK},
-				{4, 5, token.PLUS},
+				{5, 1, token.OperatorMinus},
+				{2, 3, token.OperatorAsterisk},
+				{4, 5, token.OperatorPlus},
 			},
 		},
 		"case 2": {
 			"sub(2 + 2, 7 * 7)",
 			"sub",
 			[]param{
-				{2, 2, token.PLUS},
-				{7, 7, token.ASTERISK},
+				{2, 2, token.OperatorPlus},
+				{7, 7, token.OperatorAsterisk},
 			},
 		},
 	}
@@ -483,14 +483,14 @@ func TestCallExpressionParsing(t *testing.T) {
 			assertStatementsCount(t, program, 1)
 
 			expStmt := toExpressionStatement(t, program.Statements[0])
-			expCall := assertCallExpression(t, expStmt.Expression)
+			expCall := toCallExpression(t, expStmt.Expression)
 
-			altIdent := assertIdentifier(t, expCall.Function)
+			altIdent := toIdentifier(t, expCall.Function)
 			assertIdentifierValue(t, data.funcName, altIdent.Value)
 
 			assert.Len(t, expCall.Arguments, len(data.params))
 			for i, arg := range expCall.Arguments {
-				infixExp := assertInfixExpression(t, arg)
+				infixExp := toInfixExpression(t, arg)
 
 				assertOperator(t, infixExp.Operator, data.params[i].operator)
 				assertLiteral(t, infixExp.Left, data.params[i].leftVal)
@@ -501,48 +501,52 @@ func TestCallExpressionParsing(t *testing.T) {
 }
 
 func TestParsingArrayLiterals(t *testing.T) {
-	input := "[1, 2 * 2, 3 + 3]"
-
-	program := parseProgram(t, input)
-
-	stmt, ok := program.Statements[0].(*ast.ExpressionStatement)
-	array, ok := stmt.Expression.(*ast.ArrayLiteral)
-	if !ok {
-		t.Fatalf("exp not ast.ArrayLiteral. got=%T", stmt.Expression)
+	type param struct {
+		leftVal  int64
+		rightVal int64
+		operator string
 	}
 
-	if len(array.Elements) != 3 {
-		t.Fatalf("len(array.Elements) not 3. got=%d", len(array.Elements))
+	testData := map[string]struct {
+		input          string
+		expectedParams []param
+	}{
+		"case 1": {
+			"[4 - 2, 2 * 3, 1 + 3]",
+			[]param{{4, 2, token.OperatorMinus}, {2, 3, token.OperatorAsterisk}, {1, 3, token.OperatorPlus}},
+		},
 	}
 
-	assertLiteral(t, array.Elements[0], 1)
+	for name, tData := range testData {
+		data := tData
 
-	infixExp1 := assertInfixExpression(t, array.Elements[1])
-	assertOperator(t, infixExp1.Operator, token.ASTERISK)
-	assertLiteral(t, infixExp1.Left, 2)
-	assertLiteral(t, infixExp1.Right, 2)
+		t.Run(name, func(t *testing.T) {
+			program := parseProgram(t, data.input)
+			expStmt := toExpressionStatement(t, program.Statements[0])
+			arrayLit := toArrayLiteral(t, expStmt.Expression)
 
-	infixExp2 := assertInfixExpression(t, array.Elements[2])
-	assertOperator(t, infixExp2.Operator, token.PLUS)
-	assertLiteral(t, infixExp2.Left, 3)
-	assertLiteral(t, infixExp2.Right, 3)
+			for i, elem := range arrayLit.Elements {
+				t.Run("element "+string(i), func(t *testing.T) {
+					infixExp := toInfixExpression(t, elem)
+					expected := data.expectedParams[i]
+					assertInfixExpression(t, infixExp, expected.operator, expected.leftVal, expected.rightVal)
+				})
+			}
+		})
+	}
 }
 
 func TestParsingIndexExpressions(t *testing.T) {
 	input := "myArray[1 + 2]"
 
 	program := parseProgram(t, input)
-
 	stmt := toExpressionStatement(t, program.Statements[0])
-
 	indexExp := toIndexExpression(t, stmt.Expression)
 
 	assertLiteral(t, indexExp.Left, "myArray")
 
-	infixExp := assertInfixExpression(t, indexExp.Index)
-	assertOperator(t, infixExp.Operator, token.PLUS)
-	assertLiteral(t, infixExp.Left, 1)
-	assertLiteral(t, infixExp.Right, 2)
+	infixExp := toInfixExpression(t, indexExp.Index)
+	assertInfixExpression(t, infixExp, token.OperatorPlus, 1, 2)
 }
 
 func TestParsingHashLiteralsStringKeys(t *testing.T) {
@@ -559,7 +563,6 @@ func TestParsingHashLiteralsStringKeys(t *testing.T) {
 
 		t.Run(name, func(t *testing.T) {
 			program := parseProgram(t, data.input)
-
 			expStmt := toExpressionStatement(t, program.Statements[0])
 			hashLit := toHashLiteral(t, expStmt.Expression)
 
@@ -568,7 +571,6 @@ func TestParsingHashLiteralsStringKeys(t *testing.T) {
 			}
 
 			for key, value := range hashLit.Pairs {
-
 				strLit := toStringLiteral(t, key)
 				expectedValue := data.expected[strLit.String()]
 
@@ -578,54 +580,68 @@ func TestParsingHashLiteralsStringKeys(t *testing.T) {
 	}
 }
 
-// func TestParsingHashLiteralsWithExpressions(t *testing.T) {
-// 	input := `{"one": 0 + 1, "two": 10 - 8, "three": 15 / 5}`
+func TestParsingHashLiteralsWithExpressions(t *testing.T) {
+	type param struct {
+		leftVal  int64
+		rightVal int64
+		operator string
+	}
 
-// 	program := parseProgram(t, input)
+	testData := map[string]struct {
+		input    string
+		expected map[string]param
+	}{
+		"case 1": {
+			`{"one": 0 + 1, "two": 10 - 8, "three": 15 / 5}`,
+			map[string]param{
+				"one":   {0, 1, token.OperatorPlus},
+				"two":   {10, 8, token.OperatorMinus},
+				"three": {15, 5, token.OperatorSlash},
+			},
+		},
+	}
 
-// 	stmt := program.Statements[0].(*ast.ExpressionStatement)
-// 	hash, ok := stmt.Expression.(*ast.HashLiteral)
-// 	if !ok {
-// 		t.Fatalf("exp is not ast.HashLiteral. got=%T", stmt.Expression)
-// 	}
+	for name, tData := range testData {
+		data := tData
 
-// 	if len(hash.Pairs) != 3 {
-// 		t.Errorf("hash.Pairs has wrong length. got=%d", len(hash.Pairs))
-// 	}
+		t.Run(name, func(t *testing.T) {
+			program := parseProgram(t, data.input)
+			expStmt := toExpressionStatement(t, program.Statements[0])
+			hashLit := toHashLiteral(t, expStmt.Expression)
 
-// 	tests := map[string]func(ast.Expression){
-// 		"one": func(e ast.Expression) {
-// 			testInfixExpression(t, e, 0, "+", 1)
-// 		},
-// 		"two": func(e ast.Expression) {
-// 			testInfixExpression(t, e, 10, "-", 8)
-// 		},
-// 		"three": func(e ast.Expression) {
-// 			testInfixExpression(t, e, 15, "/", 5)
-// 		},
-// 	}
+			if len(hashLit.Pairs) != len(data.expected) {
+				t.Errorf("hash.Pairs has wrong length. got=%d", len(hashLit.Pairs))
+			}
 
-// 	for key, value := range hash.Pairs {
-// 		literal, ok := key.(*ast.StringLiteral)
-// 		if !ok {
-// 			t.Errorf("key is not ast.StringLiteral. got=%T", key)
-// 			continue
-// 		}
+			for key, value := range hashLit.Pairs {
+				strLit := toStringLiteral(t, key)
+				expected := data.expected[strLit.String()]
+				infixExp := toInfixExpression(t, value)
 
-// 		testFunc, ok := tests[literal.String()]
-// 		if !ok {
-// 			t.Errorf("No test function for key %q found", literal.String())
-// 			continue
-// 		}
+				assertInfixExpression(t, infixExp, expected.operator, expected.leftVal, expected.rightVal)
+			}
+		})
+	}
+}
 
-// 		testFunc(value)
-// 	}
-// }
+func assertIdentifierValue(t *testing.T, expected, actual string) {
+	if strings.ToLower(expected) != strings.ToLower(actual) {
+		t.Errorf("invalid identifier value, expected: %v, actual: %v", expected, actual)
+	}
+}
 
 func assertTokenLiteral(t *testing.T, expected, actual string) {
 	if strings.ToLower(expected) != strings.ToLower(actual) {
 		t.Errorf("invalid literal, expected: %v, actual: %v", expected, actual)
 	}
+}
+
+func toArrayLiteral(t *testing.T, exp ast.Expression) *ast.ArrayLiteral {
+	arrayLit, ok := exp.(*ast.ArrayLiteral)
+	if !ok {
+		t.Errorf("invalid ast.Expression type, expected: *ast.ArrayLiteral, actual: %T", exp)
+	}
+	return arrayLit
 }
 
 func toStringLiteral(t *testing.T, exp ast.Expression) *ast.StringLiteral {
@@ -652,12 +668,6 @@ func toIndexExpression(t *testing.T, exp ast.Expression) *ast.IndexExpression {
 	return indexExp
 }
 
-func assertIdentifierValue(t *testing.T, expected, actual string) {
-	if strings.ToLower(expected) != strings.ToLower(actual) {
-		t.Errorf("invalid identifier value, expected: %v, actual: %v", expected, actual)
-	}
-}
-
 func toExpressionStatement(t *testing.T, stmt ast.Statement) *ast.ExpressionStatement {
 	expStmt, ok := stmt.(*ast.ExpressionStatement)
 	if !ok {
@@ -666,7 +676,7 @@ func toExpressionStatement(t *testing.T, stmt ast.Statement) *ast.ExpressionStat
 	return expStmt
 }
 
-func assertCallExpression(t *testing.T, exp ast.Expression) *ast.CallExpression {
+func toCallExpression(t *testing.T, exp ast.Expression) *ast.CallExpression {
 	callExp, ok := exp.(*ast.CallExpression)
 	if !ok {
 		t.Errorf("invalid ast.Expression type, expected: *ast.CallExpression, actual: %T", exp)
@@ -674,16 +684,15 @@ func assertCallExpression(t *testing.T, exp ast.Expression) *ast.CallExpression 
 	return callExp
 }
 
-func assertLetStatement(t *testing.T, stmt ast.Statement) *ast.LetStatement {
+func toLetStatement(t *testing.T, stmt ast.Statement) *ast.LetStatement {
 	letStmt, ok := stmt.(*ast.LetStatement)
 	if !ok {
 		t.Errorf("invalid ast.Statement type, expected: *ast.LetStatement, actual: %T", stmt)
 	}
-
 	return letStmt
 }
 
-func assertIdentifier(t *testing.T, exp ast.Expression) *ast.Identifier {
+func toIdentifier(t *testing.T, exp ast.Expression) *ast.Identifier {
 	ident, ok := exp.(*ast.Identifier)
 	if !ok {
 		t.Errorf("invalid ast.Expression type, expected: *ast.Identifier, actual: %T", exp)
@@ -691,7 +700,7 @@ func assertIdentifier(t *testing.T, exp ast.Expression) *ast.Identifier {
 	return ident
 }
 
-func assertPrefixExpression(t *testing.T, exp ast.Expression) *ast.PrefixExpression {
+func toPrefixExpression(t *testing.T, exp ast.Expression) *ast.PrefixExpression {
 	prfxExp, ok := exp.(*ast.PrefixExpression)
 	if !ok {
 		t.Errorf("invalid ast.Expression type, expected: *ast.PrefixExpression, actual: %T", exp)
@@ -699,7 +708,7 @@ func assertPrefixExpression(t *testing.T, exp ast.Expression) *ast.PrefixExpress
 	return prfxExp
 }
 
-func assertFunctionLiteral(t *testing.T, exp ast.Expression) *ast.FunctionLiteral {
+func toFunctionLiteral(t *testing.T, exp ast.Expression) *ast.FunctionLiteral {
 	funcLit, ok := exp.(*ast.FunctionLiteral)
 	if !ok {
 		t.Errorf("invalid ast.Expression type, expected: *ast.FunctionLiteral, actual: %T", exp)
@@ -707,7 +716,7 @@ func assertFunctionLiteral(t *testing.T, exp ast.Expression) *ast.FunctionLitera
 	return funcLit
 }
 
-func assertIfExpression(t *testing.T, exp ast.Expression) *ast.IfExpression {
+func toIfExpression(t *testing.T, exp ast.Expression) *ast.IfExpression {
 	ifExp, ok := exp.(*ast.IfExpression)
 	if !ok {
 		t.Errorf("invalid ast.Expression type, expected: *ast.IfExpression, actual: %T", exp)
@@ -715,7 +724,7 @@ func assertIfExpression(t *testing.T, exp ast.Expression) *ast.IfExpression {
 	return ifExp
 }
 
-func assertIntegerLiteral(t *testing.T, exp ast.Expression) *ast.IntegerLiteral {
+func toIntegerLiteral(t *testing.T, exp ast.Expression) *ast.IntegerLiteral {
 	intLit, ok := exp.(*ast.IntegerLiteral)
 	if !ok {
 		t.Errorf("invalid ast.Expression type, expected: *ast.IntegerLiteral, actual: %T", exp)
@@ -723,7 +732,7 @@ func assertIntegerLiteral(t *testing.T, exp ast.Expression) *ast.IntegerLiteral 
 	return intLit
 }
 
-func assertBooleanLiteral(t *testing.T, exp ast.Expression) *ast.BooleanLiteral {
+func toBooleanLiteral(t *testing.T, exp ast.Expression) *ast.BooleanLiteral {
 	boolLit, ok := exp.(*ast.BooleanLiteral)
 	if !ok {
 		t.Errorf("invalid ast.Expression type, expected: *ast.BooleanLiteral, actual: %T", exp)
@@ -731,7 +740,7 @@ func assertBooleanLiteral(t *testing.T, exp ast.Expression) *ast.BooleanLiteral 
 	return boolLit
 }
 
-func assertReturnStatement(t *testing.T, stmt ast.Statement) *ast.ReturnStatement {
+func toReturnStatement(t *testing.T, stmt ast.Statement) *ast.ReturnStatement {
 	retStmt, ok := stmt.(*ast.ReturnStatement)
 	if !ok {
 		t.Errorf("invalid ast.Statement type, expected: *ast.ReturnStatement, actual: %T", stmt)
@@ -739,7 +748,7 @@ func assertReturnStatement(t *testing.T, stmt ast.Statement) *ast.ReturnStatemen
 	return retStmt
 }
 
-func assertInfixExpression(t *testing.T, exp ast.Expression) *ast.InfixExpression {
+func toInfixExpression(t *testing.T, exp ast.Expression) *ast.InfixExpression {
 	infixExp, ok := exp.(*ast.InfixExpression)
 	if !ok {
 		t.Errorf("invalid ast.Expression type, expected: *ast.InfixExpression, actual: %T", exp)
@@ -802,8 +811,13 @@ func assertOperator(t *testing.T, expected, actual string) {
 
 func assertParameters(t *testing.T, params []*ast.Identifier, expected []string) {
 	assert.Len(t, params, len(expected))
-
 	for i, param := range params {
 		assertLiteral(t, param, expected[i])
 	}
+}
+
+func assertInfixExpression(t *testing.T, exp *ast.InfixExpression, operator string, leftVal, rightVal interface{}) {
+	assertOperator(t, exp.Operator, operator)
+	assertLiteral(t, exp.Left, leftVal)
+	assertLiteral(t, exp.Right, rightVal)
 }

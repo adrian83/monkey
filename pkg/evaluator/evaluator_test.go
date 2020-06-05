@@ -420,12 +420,12 @@ func TestHashLiterals(t *testing.T) {
 	}
 
 	expected := map[object.HashKey]int64{
-		(&object.String{Value: "one"}).HashKey():   1,
-		(&object.String{Value: "two"}).HashKey():   2,
-		(&object.String{Value: "three"}).HashKey(): 3,
-		(&object.Integer{Value: 4}).HashKey():      4,
-		objTrue.HashKey():                          5,
-		objFalse.HashKey():                         6,
+		(object.NewString("one")).HashKey():   1,
+		(object.NewString("two")).HashKey():   2,
+		(object.NewString("three")).HashKey(): 3,
+		(object.NewInteger(4)).HashKey():      4,
+		objTrue.HashKey():                     5,
+		objFalse.HashKey():                    6,
 	}
 
 	if len(result.Pairs) != len(expected) {

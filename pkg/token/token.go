@@ -3,48 +3,45 @@ package token
 type Operator string
 
 const (
-	ILLEGAL = "ILLEGAL"
-	EOF     = "EOF"
+	Illegal = "ILLEGAL"
+	Eof     = "EOF"
 
 	// Identifiers + literals
-	IDENT  = "IDENT" // add, foobar, x, y, ...
-	INT    = "INT"   // 1343456
-	STRING = "STRING"
+	Ident       = "IDENT" // add, foobar, x, y, ...
+	TypeInteger = "INT"   // 1343456
+	TypeString  = "STRING"
 
 	// Operators
-	ASSIGN   = "="
-	PLUS     = "+"
-	MINUS    = "-"
-	BANG     = "!"
-	ASTERISK = "*"
-	SLASH    = "/"
-
-	LT = "<"
-	GT = ">"
+	OperatorAssign      = "="
+	OperatorPlus        = "+"
+	OperatorMinus       = "-"
+	OperatorBang        = "!"
+	OperatorAsterisk    = "*"
+	OperatorSlash       = "/"
+	OperatorEqual       = "=="
+	OperatorNotEqual    = "!="
+	OperatorLowerThan   = "<"
+	OperatorGreaterThan = ">"
 
 	// Delimiters
-	COMMA     = ","
-	SEMICOLON = ";"
-	LPAREN    = "("
-	RPAREN    = ")"
-	LBRACE    = "{"
-	RBRACE    = "}"
-	EQ        = "=="
-	NOT_EQ    = "!="
+	DelimiterComma            = ","
+	DelimiterSemicolon        = ";"
+	DelimiterLeftParenthesis  = "("
+	DelimiterRightParenthesis = ")"
+	DelimiterLeftBrace        = "{"
+	DelimiterRightBrace       = "}"
+	DelimiterLeftBracket      = "["
+	DelimiterRightBracket     = "]"
+	DelimiterColon            = ":"
 
 	// Keywords
-	FUNCTION = "FUNCTION"
-	LET      = "LET"
-	TRUE     = "TRUE"
-	FALSE    = "FALSE"
-	IF       = "IF"
-	ELSE     = "ELSE"
-	RETURN   = "RETURN"
-
-	LBRACKET = "["
-	RBRACKET = "]"
-
-	COLON = ":"
+	KeywordFunction = "FUNCTION"
+	KeywordLet      = "LET"
+	KeywordTrue     = "TRUE"
+	KeywordFalse    = "FALSE"
+	KeywordIf       = "IF"
+	KeywordElse     = "ELSE"
+	KeywordReturn   = "RETURN"
 )
 
 type TokenType string
@@ -55,18 +52,18 @@ type Token struct {
 }
 
 var keywords = map[string]TokenType{
-	"fn":     FUNCTION,
-	"let":    LET,
-	"true":   TRUE,
-	"false":  FALSE,
-	"if":     IF,
-	"else":   ELSE,
-	"return": RETURN,
+	"fn":     KeywordFunction,
+	"let":    KeywordLet,
+	"true":   KeywordTrue,
+	"false":  KeywordFalse,
+	"if":     KeywordIf,
+	"else":   KeywordElse,
+	"return": KeywordReturn,
 }
 
 func LookupIdent(ident string) TokenType {
 	if tok, ok := keywords[ident]; ok {
 		return tok
 	}
-	return IDENT
+	return Ident
 }
