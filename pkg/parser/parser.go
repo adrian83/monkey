@@ -43,6 +43,7 @@ type (
 
 type Parser struct {
 	l      *lexer.Lexer
+	tokens chan token.Token
 	errors []string
 
 	curToken  token.Token
@@ -55,6 +56,7 @@ type Parser struct {
 func New(l *lexer.Lexer) *Parser {
 	p := &Parser{
 		l:      l,
+		tokens: l.Tokens(),
 		errors: []string{},
 	}
 
@@ -340,7 +342,7 @@ func (p *Parser) peekError(t token.TokenType) {
 
 func (p *Parser) nextToken() {
 	p.curToken = p.peekToken
-	p.peekToken = p.l.NextToken()
+	p.peekToken = <-p.tokens
 }
 
 func (p *Parser) ParseProgram() (*ast.Program, error) {
