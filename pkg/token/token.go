@@ -42,6 +42,14 @@ const (
 	KeywordIf       = "IF"
 	KeywordElse     = "ELSE"
 	KeywordReturn   = "RETURN"
+
+	codeKeywordFunction = "fn"
+	codeKeywordLet      = "let"
+	codeKeywordTrue     = "true"
+	codeKeywordFalse    = "false"
+	codeKeywordIf       = "if"
+	codeKeywordElse     = "else"
+	codeKeywordReturn   = "return"
 )
 
 type TokenType string
@@ -52,13 +60,13 @@ type Token struct {
 }
 
 var keywords = map[string]TokenType{
-	"fn":     KeywordFunction,
-	"let":    KeywordLet,
-	"true":   KeywordTrue,
-	"false":  KeywordFalse,
-	"if":     KeywordIf,
-	"else":   KeywordElse,
-	"return": KeywordReturn,
+	codeKeywordFunction: KeywordFunction,
+	codeKeywordLet:      KeywordLet,
+	codeKeywordTrue:     KeywordTrue,
+	codeKeywordFalse:    KeywordFalse,
+	codeKeywordIf:       KeywordIf,
+	codeKeywordElse:     KeywordElse,
+	codeKeywordReturn:   KeywordReturn,
 }
 
 func LookupIdent(ident string) TokenType {
